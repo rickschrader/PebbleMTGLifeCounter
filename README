@@ -1,0 +1,8 @@
+A Magic: The Gathering life counter app for the Pebble watch.  
+
+The buttons perform the following functions:
+Up - removes 1 life from the top player's counter
+Up long press - adds 1 life to the top player's counter
+Down - removes 1 life from the bottom player's counter
+Down long press - adds 1 life to the bottom player's counter
+Select long press - resets both life counters to 20

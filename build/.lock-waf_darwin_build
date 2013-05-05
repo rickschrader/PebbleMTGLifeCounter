@@ -1,0 +1,8 @@
+argv = ['./waf', 'configure']
+environ = {'TERM_SESSION_ID': 'B0B1807D-D39E-468B-9002-E529B4BE9D15', 'SSH_AUTH_SOCK': '/tmp/launch-idZDDB/Listeners', 'TERM_PROGRAM_VERSION': '309', 'SHELL': '/bin/bash', 'LOGNAME': 'Rick', 'USER': 'Rick', 'HOME': '/Users/Rick', 'PATH': '/Users/Rick/Library/Application Support/GoodSync:/Library/Frameworks/Python.framework/Versions/2.7/bin:/Users/Rick/pebble-dev/arm-cs-tools/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/X11/bin', 'DISPLAY': '/tmp/launch-z6vvS5/org.macosforge.xquartz:0', 'TMPDIR': '/var/folders/j3/qj7qh0jn24s6k5ghz3n_19rh0000gn/T/', 'TERM_PROGRAM': 'Apple_Terminal', 'LANG': 'en_US.UTF-8', 'TERM': 'xterm-256color', 'Apple_PubSub_Socket_Render': '/tmp/launch-X4izFz/Render', 'SHLVL': '1', 'OLDPWD': '/Users/Rick/pebble-dev/myprojects', '__CF_USER_TEXT_ENCODING': '0x1F5:0:0', 'Apple_Ubiquity_Message': '/tmp/launch-gkWjUt/Apple_Ubiquity_Message', 'PWD': '/Users/Rick/pebble-dev/myprojects/PebbleMTGLifeCounter', '_': './waf', 'COMMAND_MODE': 'unix2003'}
+files = ['/Users/Rick/pebble-dev/myprojects/PebbleMTGLifeCounter/wscript']
+hash = -6438031668512116530
+options = {'files': '', 'jobs': 8, 'verbose': 0, 'nocache': False, 'progress_bar': 0, 'timestamp': None, 'distcheck_args': None, 'top': '', 'destdir': '', 'keep': 0, 'zones': '', 'debug': False, 'prefix': '/usr/local/', 'download': False, 'force': False, 'targets': '', 'out': ''}
+out_dir = '/Users/Rick/pebble-dev/myprojects/PebbleMTGLifeCounter/build'
+run_dir = '/Users/Rick/pebble-dev/myprojects/PebbleMTGLifeCounter'
+top_dir = '/Users/Rick/pebble-dev/myprojects/PebbleMTGLifeCounter'
