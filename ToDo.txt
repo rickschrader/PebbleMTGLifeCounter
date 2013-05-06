@@ -1,0 +1,6 @@
+Add icon
+Add "screenshot"
+Remove button icon image
+Increase text size for counters
+Add background image
+Add timer in center
