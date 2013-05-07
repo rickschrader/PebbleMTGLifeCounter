@@ -6,7 +6,7 @@
 PBL_APP_INFO(MY_UUID,
              "M:TG Life", "Rick Schrader",
              1, 0, /* App version */
-             DEFAULT_MENU_ICON,
+             RESOURCE_ID_IMAGE_MENU_ICON,
              APP_INFO_STANDARD_APP);
 
 static Window window;
@@ -16,8 +16,9 @@ static TextLayer _countALayer;
 static TextLayer _countBLayer;
 static BmpContainer _buttonLabels;
 static BmpContainer _background;
+//static GFont _bigFont;
 
-#define CounterFont RESOURCE_ID_FONT_DEJAVU_SANS_BOLD_SUBSET_36
+//#define CounterFont RESOURCE_ID_FONT_DEJAVU_SANS_BOLD_SUBSET_36
 #define InitialCount 20
 	
 static int _countA = InitialCount;
@@ -121,37 +122,42 @@ void InitHandler(AppContextRef ctx) {
     // Arrange for user input.
     window_set_click_config_provider(&window, (ClickConfigProvider) ConfigProvider);
 
-    // Get our fonts
-    GFont big_font = fonts_load_custom_font(resource_get_handle(CounterFont));
+    //// Get our fonts
+    //_bigFont = fonts_load_custom_font(resource_get_handle(CounterFont));
 
     // Root layer
     Layer *rootLayer = window_get_root_layer(&window);
     
 	// Add background image
-    //bmp_init_container(RESOURCE_ID_IMAGE_BG, &Background);
-    //layer_set_frame(&Background.layer.layer, GRect(0, 0, 144, 140));
-    //layer_add_child(root_layer, &Background.layer.layer);
+    bmp_init_container(RESOURCE_ID_IMAGE_BG, &_background);
+    //layer_set_frame(&_background.layer.layer, GRect(0, 0, 144, 140));
+    layer_set_frame(&_background.layer.layer, GRect(0, 0, 144, 152));
+    layer_add_child(rootLayer, &_background.layer.layer);
     
 	text_layer_init(&_countALayer, window.layer.frame);
-    text_layer_set_background_color(&_countALayer, GColorBlack);
-    text_layer_set_font(&_countALayer, big_font);
-    layer_set_frame(&_countALayer.layer, GRect(0, 20, 144, 40));
-  	text_layer_set_text_color(&_countALayer, GColorWhite);
+    text_layer_set_background_color(&_countALayer, GColorClear);
+	text_layer_set_font(&_countALayer, fonts_get_system_font(FONT_KEY_GOTHAM_42_BOLD));
+    //text_layer_set_font(&_countALayer, _bigFont);
+    //Not sure why, but centering would not work with an x origin of 0
+    layer_set_frame(&_countALayer.layer, GRect(-10, 10, 154, 60));
+  	text_layer_set_text_color(&_countALayer, GColorBlack);
     text_layer_set_text_alignment(&_countALayer, GTextAlignmentCenter);
     layer_add_child(rootLayer, &_countALayer.layer);
 	
     text_layer_init(&_countBLayer, window.layer.frame);
-    text_layer_set_background_color(&_countBLayer, GColorBlack);
-    text_layer_set_font(&_countBLayer, big_font);
-    layer_set_frame(&_countBLayer.layer, GRect(0, 82, 144, 40));
-  	text_layer_set_text_color(&_countBLayer, GColorWhite);
+    text_layer_set_background_color(&_countBLayer, GColorClear);
+    //text_layer_set_font(&_countBLayer, _bigFont);
+    text_layer_set_font(&_countBLayer, fonts_get_system_font(FONT_KEY_GOTHAM_42_BOLD));
+	//Not sure why, but centering would not work with an x origin of 0
+    layer_set_frame(&_countBLayer.layer, GRect(-10, 90, 154, 60));
+  	text_layer_set_text_color(&_countBLayer, GColorBlack);
     text_layer_set_text_alignment(&_countBLayer, GTextAlignmentCenter);
     layer_add_child(rootLayer, &_countBLayer.layer);
 
-    // Add button labels
-    bmp_init_container(RESOURCE_ID_IMAGE_BUTTON_LABELS, &_buttonLabels);
-    layer_set_frame(&_buttonLabels.layer.layer, GRect(130, 0, 14, 140));
-    layer_add_child(rootLayer, &_buttonLabels.layer.layer);
+    //// Add button labels
+    //bmp_init_container(RESOURCE_ID_IMAGE_BUTTON_LABELS, &_buttonLabels);
+    //layer_set_frame(&_buttonLabels.layer.layer, GRect(130, 0, 14, 140));
+    //layer_add_child(rootLayer, &_buttonLabels.layer.layer);
    	
 	DisplayCountA();
 	DisplayCountB();
@@ -159,6 +165,8 @@ void InitHandler(AppContextRef ctx) {
 
 void DeinitHandler(AppContextRef ctx) {
     bmp_deinit_container(&_buttonLabels);
+    bmp_deinit_container(&_background);
+	//fonts_unload_custom_font(_bigFont);
 }
 
 void pbl_main(void *params) {
