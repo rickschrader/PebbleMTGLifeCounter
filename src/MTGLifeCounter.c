@@ -1,6 +1,7 @@
 #include "pebble_os.h"
 #include "pebble_app.h"
 #include "pebble_fonts.h"
+#include "xprintf.h"
 	
 #define MY_UUID { 0xC2, 0x5A, 0x8D, 0x50, 0x10, 0x5F, 0x45, 0xBF, 0xC9, 0x92, 0xCE, 0xF9, 0x58, 0xAC, 0x93, 0xAD }
 PBL_APP_INFO(MY_UUID,
@@ -14,6 +15,7 @@ AppContextRef app;
 
 static TextLayer _countALayer;
 static TextLayer _countBLayer;
+static TextLayer _timerLayer;
 static BmpContainer _buttonLabels;
 static BmpContainer _background;
 //static GFont _bigFont;
@@ -23,6 +25,10 @@ static BmpContainer _background;
 	
 static int _countA = InitialCount;
 static int _countB = InitialCount;
+static bool _timerEnabled = false;
+static int _timerHours = 0;
+static int _timerMinutes = 0;
+static int _timerSeconds = 0;
 
 void itoa2(int num, char* buffer) {
     const char digits[10] = "0123456789";
@@ -59,13 +65,15 @@ void itoa2(int num, char* buffer) {
 
 void DisplayCountA() {
 	static char countA[] = "20";
-	itoa2(_countA, &countA[0]);
+	xsprintf(countA, "%d", _countA);
+	//itoa2(_countA, &countA[0]);
 	text_layer_set_text(&_countALayer, countA);
 }
 
 void DisplayCountB() {
 	static char countB[] = "20";
-	itoa2(_countB, &countB[0]);
+	xsprintf(countB, "%d", _countB);
+	//itoa2(_countB, &countB[0]);
 	text_layer_set_text(&_countBLayer, countB);
 }
 
@@ -95,6 +103,92 @@ void DecrementBHandler(ClickRecognizerRef recognizer, Window *window) {
     if(_countB > 0)
         _countB -= 1;
     DisplayCountB();
+}
+
+void DisplayTimer()
+{
+	static char timerText[] = "0:00:00";
+	static char hoursText[] = "00";
+	static char minutesText[] = "00";
+	static char secondsText[] = "00";
+		
+	xsprintf(hoursText, "%d", _timerHours);
+	
+	if(_timerMinutes < 10)
+		xsprintf(minutesText, "%s%d", "0", _timerMinutes);
+	else
+		xsprintf(minutesText, "%d", _timerMinutes);				
+	
+	if(_timerSeconds < 10)
+		xsprintf(secondsText, "%s%d", "0", _timerSeconds);
+	else
+		xsprintf(secondsText, "%d", _timerSeconds);
+	
+	//itoa2(_timerHours, &hoursText[0]);
+	//itoa2(_timerMinutes, &minutesText[0]);
+	//itoa2(_timerSeconds, &secondsText[0]);
+	
+	//strcat(words, TENS[tens_val]);
+	
+	xsprintf(timerText, "%s%s%s%s%s", hoursText, ":", minutesText, ":", secondsText);
+  	
+	text_layer_set_text(&_timerLayer, timerText);
+}
+
+void TickHandler(AppContextRef ctx, PebbleTickEvent *t) {
+
+	(void)ctx;
+		
+	if(_timerSeconds+1 >= 60)
+	{
+		_timerSeconds = 0;
+		
+		if(_timerMinutes+1 >= 60)
+		{			
+			_timerMinutes = 0;
+			_timerHours += 1;
+		}
+		else
+		{
+			_timerMinutes += 1;
+		}
+	}
+	else	
+	{	
+		_timerSeconds += 1;
+	}
+		
+	DisplayTimer();
+	
+	
+  // Need to be static because they're used by the system later.
+  //static char time_text[] = "00:00";
+  //static char date_text[] = "Xxxxxxxxx 00";
+
+  //char *time_format;
+
+
+  // TODO: Only update the date when it's changed.
+  //string_format_time(date_text, sizeof(date_text), "%B %e", t->tick_time);
+  //text_layer_set_text(&text_date_layer, date_text);
+
+
+  //if (clock_is_24h_style()) {
+  //  time_format = "%R";
+  //} else {
+  //  time_format = "%I:%M";
+ // }
+
+  //string_format_time(time_text, sizeof(time_text), time_format, t->tick_time);
+
+  // Kludge to handle lack of non-padded hour format string
+  // for twelve hour clock.
+  //if (!clock_is_24h_style() && (time_text[0] == '0')) {
+  //  memmove(time_text, &time_text[1], sizeof(time_text) - 1);
+  //}
+
+  //text_layer_set_text(&text_time_layer, time_text);
+
 }
 
 void ConfigProvider(ClickConfig **config, Window *window) {
@@ -139,7 +233,7 @@ void InitHandler(AppContextRef ctx) {
 	text_layer_set_font(&_countALayer, fonts_get_system_font(FONT_KEY_GOTHAM_42_BOLD));
     //text_layer_set_font(&_countALayer, _bigFont);
     //Not sure why, but centering would not work with an x origin of 0
-    layer_set_frame(&_countALayer.layer, GRect(-10, 10, 154, 60));
+    layer_set_frame(&_countALayer.layer, GRect(-5, 10, 154, 60));
   	text_layer_set_text_color(&_countALayer, GColorBlack);
     text_layer_set_text_alignment(&_countALayer, GTextAlignmentCenter);
     layer_add_child(rootLayer, &_countALayer.layer);
@@ -149,10 +243,19 @@ void InitHandler(AppContextRef ctx) {
     //text_layer_set_font(&_countBLayer, _bigFont);
     text_layer_set_font(&_countBLayer, fonts_get_system_font(FONT_KEY_GOTHAM_42_BOLD));
 	//Not sure why, but centering would not work with an x origin of 0
-    layer_set_frame(&_countBLayer.layer, GRect(-10, 90, 154, 60));
+    layer_set_frame(&_countBLayer.layer, GRect(-5, 90, 154, 60));
   	text_layer_set_text_color(&_countBLayer, GColorBlack);
     text_layer_set_text_alignment(&_countBLayer, GTextAlignmentCenter);
     layer_add_child(rootLayer, &_countBLayer.layer);
+
+	text_layer_init(&_timerLayer, window.layer.frame);
+    text_layer_set_background_color(&_timerLayer, GColorClear);
+    text_layer_set_font(&_timerLayer, fonts_get_system_font(FONT_KEY_GOTHIC_24));
+	//Not sure why, but centering would not work with an x origin of 0
+    layer_set_frame(&_timerLayer.layer, GRect(-5, 59, 154, 26));
+  	text_layer_set_text_color(&_timerLayer, GColorWhite);
+    text_layer_set_text_alignment(&_timerLayer, GTextAlignmentCenter);
+    layer_add_child(rootLayer, &_timerLayer.layer);
 
     //// Add button labels
     //bmp_init_container(RESOURCE_ID_IMAGE_BUTTON_LABELS, &_buttonLabels);
@@ -161,6 +264,7 @@ void InitHandler(AppContextRef ctx) {
    	
 	DisplayCountA();
 	DisplayCountB();
+	DisplayTimer();
 }
 
 void DeinitHandler(AppContextRef ctx) {
@@ -172,7 +276,11 @@ void DeinitHandler(AppContextRef ctx) {
 void pbl_main(void *params) {
 	PebbleAppHandlers handlers = {
 		.init_handler = &InitHandler,
-		.deinit_handler = &DeinitHandler
+		.deinit_handler = &DeinitHandler,
+		.tick_info = {
+			.tick_handler = &TickHandler,
+			.tick_units = SECOND_UNIT
+		}
 	};
 		
 	app_event_loop(params, &handlers);

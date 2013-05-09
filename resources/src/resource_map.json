@@ -1,14 +1,10 @@
 {
     "media": [
         {
-            "defName": "IMAGE_MENU_ICON",
-            "type": "png",
-            "file": "images/icon.png"
-        },
-        {
-            "defName": "IMAGE_BG",
-            "type": "png",
-            "file": "images/background.png"
+            "characterRegex": "[0-9. ]",
+            "defName": "FONT_DEJAVU_SANS_BOLD_SUBSET_36",
+            "type": "font",
+            "file": "fonts/DejaVuSans-Bold.ttf"
         },
         {
             "defName": "IMAGE_BUTTON_LABELS",
@@ -16,10 +12,14 @@
             "file": "images/buttons.png"
         },
         {
-            "characterRegex": "[0-9. ]",
-            "defName": "FONT_DEJAVU_SANS_BOLD_SUBSET_36",
-            "type": "font",
-            "file": "fonts/DejaVuSans-Bold.ttf"
+            "defName": "IMAGE_BG",
+            "type": "png",
+            "file": "images/background.png"
+        },
+        {
+            "defName": "IMAGE_MENU_ICON",
+            "type": "png",
+            "file": "images/icon.png"
         }
     ],
     "friendlyVersion": "VERSION",
