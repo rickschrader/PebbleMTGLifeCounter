@@ -16,7 +16,6 @@ AppContextRef app;
 static TextLayer _countALayer;
 static TextLayer _countBLayer;
 static TextLayer _timerLayer;
-static BmpContainer _buttonLabels;
 static BmpContainer _background;
 //static GFont _bigFont;
 
@@ -30,50 +29,15 @@ static int _timerHours = 0;
 static int _timerMinutes = 0;
 static int _timerSeconds = 0;
 
-void itoa2(int num, char* buffer) {
-    const char digits[10] = "0123456789";
-    if(num > 999) {
-        buffer[0] = '9';
-        buffer[1] = '9';
-        buffer[2] = '9';
-
-        return;
-    } else if(num > 99) {
-        
-        buffer[0] = digits[num / 100];
-        if(num%100 > 9) {
-            buffer[1] = digits[(num%100) / 10];
-        } else {
-            buffer[1] = '0';
-        }
-        buffer[2] = digits[num%10];
-    }
-    
-    else if(num > 9) {
-        buffer[0]=' ';
-        buffer[1] = digits[num / 10];
-        
-        buffer[2] = digits[num % 10];
-    } else {
-        buffer[0] = ' ';
-
-        buffer[1] = ' ';
-        
-        buffer[2] = digits[num % 10];
-    }
-}
-
 void DisplayCountA() {
 	static char countA[] = "20";
 	xsprintf(countA, "%d", _countA);
-	//itoa2(_countA, &countA[0]);
 	text_layer_set_text(&_countALayer, countA);
 }
 
 void DisplayCountB() {
 	static char countB[] = "20";
 	xsprintf(countB, "%d", _countB);
-	//itoa2(_countB, &countB[0]);
 	text_layer_set_text(&_countBLayer, countB);
 }
 
@@ -124,10 +88,6 @@ void DisplayTimer()
 	else
 		xsprintf(secondsText, "%d", _timerSeconds);
 	
-	//itoa2(_timerHours, &hoursText[0]);
-	//itoa2(_timerMinutes, &minutesText[0]);
-	//itoa2(_timerSeconds, &secondsText[0]);
-	
 	//strcat(words, TENS[tens_val]);
 	
 	xsprintf(timerText, "%s%s%s%s%s", hoursText, ":", minutesText, ":", secondsText);
@@ -158,37 +118,7 @@ void TickHandler(AppContextRef ctx, PebbleTickEvent *t) {
 		_timerSeconds += 1;
 	}
 		
-	DisplayTimer();
-	
-	
-  // Need to be static because they're used by the system later.
-  //static char time_text[] = "00:00";
-  //static char date_text[] = "Xxxxxxxxx 00";
-
-  //char *time_format;
-
-
-  // TODO: Only update the date when it's changed.
-  //string_format_time(date_text, sizeof(date_text), "%B %e", t->tick_time);
-  //text_layer_set_text(&text_date_layer, date_text);
-
-
-  //if (clock_is_24h_style()) {
-  //  time_format = "%R";
-  //} else {
-  //  time_format = "%I:%M";
- // }
-
-  //string_format_time(time_text, sizeof(time_text), time_format, t->tick_time);
-
-  // Kludge to handle lack of non-padded hour format string
-  // for twelve hour clock.
-  //if (!clock_is_24h_style() && (time_text[0] == '0')) {
-  //  memmove(time_text, &time_text[1], sizeof(time_text) - 1);
-  //}
-
-  //text_layer_set_text(&text_time_layer, time_text);
-
+	DisplayTimer();	
 }
 
 void ConfigProvider(ClickConfig **config, Window *window) {
@@ -257,18 +187,12 @@ void InitHandler(AppContextRef ctx) {
     text_layer_set_text_alignment(&_timerLayer, GTextAlignmentCenter);
     layer_add_child(rootLayer, &_timerLayer.layer);
 
-    //// Add button labels
-    //bmp_init_container(RESOURCE_ID_IMAGE_BUTTON_LABELS, &_buttonLabels);
-    //layer_set_frame(&_buttonLabels.layer.layer, GRect(130, 0, 14, 140));
-    //layer_add_child(rootLayer, &_buttonLabels.layer.layer);
-   	
-	DisplayCountA();
+    DisplayCountA();
 	DisplayCountB();
 	DisplayTimer();
 }
 
 void DeinitHandler(AppContextRef ctx) {
-    bmp_deinit_container(&_buttonLabels);
     bmp_deinit_container(&_background);
 	//fonts_unload_custom_font(_bigFont);
 }

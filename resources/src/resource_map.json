@@ -7,11 +7,6 @@
             "file": "fonts/DejaVuSans-Bold.ttf"
         },
         {
-            "defName": "IMAGE_BUTTON_LABELS",
-            "type": "png",
-            "file": "images/buttons.png"
-        },
-        {
             "defName": "IMAGE_BG",
             "type": "png",
             "file": "images/background.png"
