@@ -1,6 +1,4 @@
-Add icon
-Add "screenshot"
-Remove button icon image
-Increase text size for counters
-Add background image
 Add timer in center
+  Figure out controls - ideally Start, Stop/Pause, and Reset
+  
+  
