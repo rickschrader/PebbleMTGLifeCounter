@@ -1,1 +1,0 @@
-/Users/Rick/pebble-dev/pebble-sdk-release-001/sdk/pebble_app.ld
