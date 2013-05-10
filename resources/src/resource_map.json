@@ -1,10 +1,9 @@
 {
     "media": [
         {
-            "characterRegex": "[0-9. ]",
-            "defName": "FONT_DEJAVU_SANS_BOLD_SUBSET_36",
-            "type": "font",
-            "file": "fonts/DejaVuSans-Bold.ttf"
+            "defName": "IMAGE_MENU_ICON",
+            "type": "png",
+            "file": "images/icon.png"
         },
         {
             "defName": "IMAGE_BG",
@@ -12,9 +11,10 @@
             "file": "images/background.png"
         },
         {
-            "defName": "IMAGE_MENU_ICON",
-            "type": "png",
-            "file": "images/icon.png"
+            "characterRegex": "[0-9. ]",
+            "defName": "FONT_DEJAVU_SANS_BOLD_SUBSET_36",
+            "type": "font",
+            "file": "fonts/DejaVuSans-Bold.ttf"
         }
     ],
     "friendlyVersion": "VERSION",

@@ -21,6 +21,7 @@ static BmpContainer _background;
 
 //#define CounterFont RESOURCE_ID_FONT_DEJAVU_SANS_BOLD_SUBSET_36
 #define InitialCount 20
+#define MaxHours 9
 	
 static int _countA = InitialCount;
 static int _countB = InitialCount;
@@ -39,34 +40,6 @@ void DisplayCountB() {
 	static char countB[] = "20";
 	xsprintf(countB, "%d", _countB);
 	text_layer_set_text(&_countBLayer, countB);
-}
-
-void ResetHandler(ClickRecognizerRef recognizer, Window *window) {
-    _countA = InitialCount;
-    _countB = InitialCount;
-	DisplayCountA();
-	DisplayCountB();
-}
-
-void IncrementAHandler(ClickRecognizerRef recognizer, Window *window) {
-    _countA += 1;
-    DisplayCountA();
-}
-
-void DecrementAHandler(ClickRecognizerRef recognizer, Window *window) {
-    if(_countA > 0)
-        _countA -= 1;
-    DisplayCountA();
-}
-void IncrementBHandler(ClickRecognizerRef recognizer, Window *window) {
-    _countB += 1;
-    DisplayCountB();
-}
-
-void DecrementBHandler(ClickRecognizerRef recognizer, Window *window) {
-    if(_countB > 0)
-        _countB -= 1;
-    DisplayCountB();
 }
 
 void DisplayTimer()
@@ -95,41 +68,103 @@ void DisplayTimer()
 	text_layer_set_text(&_timerLayer, timerText);
 }
 
+void StopAndResetTimer()
+{
+	_timerEnabled = false;
+	_timerHours = 0;
+	_timerMinutes = 0;
+	_timerSeconds = 0;
+	DisplayTimer();
+}
+
+void ResetHandler(ClickRecognizerRef recognizer, Window *window) {
+    _countA = InitialCount;
+    _countB = InitialCount;
+	DisplayCountA();
+	DisplayCountB();
+	StopAndResetTimer();
+}
+
+void IncrementAHandler(ClickRecognizerRef recognizer, Window *window) {
+    _countA += 1;
+    DisplayCountA();
+}
+
+void DecrementAHandler(ClickRecognizerRef recognizer, Window *window) {
+    if(_countA > 0)
+        _countA -= 1;
+    DisplayCountA();
+}
+void IncrementBHandler(ClickRecognizerRef recognizer, Window *window) {
+    _countB += 1;
+    DisplayCountB();
+}
+
+void DecrementBHandler(ClickRecognizerRef recognizer, Window *window) {
+    if(_countB > 0)
+        _countB -= 1;
+    DisplayCountB();
+}
+
+void LongReleaseHandler(ClickRecognizerRef recognizer, Window *window) 
+{
+	//Sharing this handler for all buttons
+	//Without this, the first click after a long press gets lost
+}
+
 void TickHandler(AppContextRef ctx, PebbleTickEvent *t) {
 
 	(void)ctx;
-		
-	if(_timerSeconds+1 >= 60)
+	
+	if(_timerEnabled)
 	{
-		_timerSeconds = 0;
-		
-		if(_timerMinutes+1 >= 60)
-		{			
-			_timerMinutes = 0;
-			_timerHours += 1;
-		}
-		else
+		if(_timerSeconds+1 >= 60)
 		{
-			_timerMinutes += 1;
+			_timerSeconds = 0;
+			
+			if(_timerMinutes+1 >= 60)
+			{			
+				_timerMinutes = 0;
+				_timerHours += 1;
+			}
+			else
+			{
+				_timerMinutes += 1;
+			}
 		}
-	}
-	else	
-	{	
-		_timerSeconds += 1;
-	}
+		else	
+		{	
+			_timerSeconds += 1;
+		}
 		
-	DisplayTimer();	
+		//If we pass the max # hours/minutes/seconds, stop and reset the timer (so we don't overflow the buffer) 
+		if(_timerHours > MaxHours)
+			StopAndResetTimer();
+		else
+			DisplayTimer();	
+	}
+}
+
+void ToggleTimerHandler(ClickRecognizerRef recognizer, Window *window) {
+    _timerEnabled = !_timerEnabled;
 }
 
 void ConfigProvider(ClickConfig **config, Window *window) {
     config[BUTTON_ID_UP]->click.handler = (ClickHandler)DecrementAHandler;
     config[BUTTON_ID_UP]->long_click.handler = (ClickHandler)IncrementAHandler;
     config[BUTTON_ID_UP]->long_click.delay_ms = 700;
+	config[BUTTON_ID_UP]->long_click.release_handler = (ClickHandler)LongReleaseHandler;
+	
     config[BUTTON_ID_DOWN]->click.handler = (ClickHandler)DecrementBHandler;
     config[BUTTON_ID_DOWN]->long_click.handler = (ClickHandler)IncrementBHandler;
     config[BUTTON_ID_DOWN]->long_click.delay_ms = 700;
+	config[BUTTON_ID_DOWN]->long_click.release_handler = (ClickHandler)LongReleaseHandler;
+	
+    config[BUTTON_ID_SELECT]->click.handler = (ClickHandler)ToggleTimerHandler;
     config[BUTTON_ID_SELECT]->long_click.handler = (ClickHandler)ResetHandler;
     config[BUTTON_ID_SELECT]->long_click.delay_ms = 1000;
+	config[BUTTON_ID_SELECT]->long_click.release_handler = (ClickHandler)LongReleaseHandler;
+	
     (void)window;
 }
 
@@ -180,7 +215,7 @@ void InitHandler(AppContextRef ctx) {
 
 	text_layer_init(&_timerLayer, window.layer.frame);
     text_layer_set_background_color(&_timerLayer, GColorClear);
-    text_layer_set_font(&_timerLayer, fonts_get_system_font(FONT_KEY_GOTHIC_24));
+    text_layer_set_font(&_timerLayer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
 	//Not sure why, but centering would not work with an x origin of 0
     layer_set_frame(&_timerLayer.layer, GRect(-5, 59, 154, 26));
   	text_layer_set_text_color(&_timerLayer, GColorWhite);
