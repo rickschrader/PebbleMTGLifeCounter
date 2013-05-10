@@ -1,9 +1,8 @@
 
 .DS_Store
 
-build/.lock-waf_darwin_build
-
 .lock-waf_darwin_build
+.lock-waf_cygwin_build
 
 build/.wafpickle-98
 
@@ -19,13 +18,13 @@ build/resources/
 
 build/src/
 
+build/python*
+
 include
 
 lib
 
 pebble_app.ld
-
-resources/wscript
 
 tools
 
