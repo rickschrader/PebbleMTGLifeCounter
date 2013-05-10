@@ -34,3 +34,5 @@ waf
 wscript
 
 .waf*/
+
+*.lnk
