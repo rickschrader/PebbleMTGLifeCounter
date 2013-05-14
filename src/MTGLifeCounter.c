@@ -6,7 +6,7 @@
 #define MY_UUID { 0xC2, 0x5A, 0x8D, 0x50, 0x10, 0x5F, 0x45, 0xBF, 0xC9, 0x92, 0xCE, 0xF9, 0x58, 0xAC, 0x93, 0xAD }
 PBL_APP_INFO(MY_UUID,
              "M:TG Life", "Rick Schrader",
-             1, 2, /* App version */
+             1, 3, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
              APP_INFO_STANDARD_APP);
 
@@ -17,9 +17,14 @@ static TextLayer _countALayer;
 static TextLayer _countBLayer;
 static TextLayer _timerLayer;
 static BmpContainer _background;
-//static GFont _bigFont;
 
-//#define CounterFont RESOURCE_ID_FONT_DEJAVU_SANS_BOLD_SUBSET_36
+//Allows cancelling the timer using app_timer_cancel_event
+AppTimerHandle _longPressUpTimerHandle;
+AppTimerHandle _longPressDownTimerHandle;
+//Lets us differentiate between multiple timers
+#define CookieLongPressUpTimer 1
+#define CookieLongPressDownTimer 2
+
 #define InitialCount 20
 #define MaxHours 9
 	
@@ -85,9 +90,17 @@ void ResetHandler(ClickRecognizerRef recognizer, Window *window) {
 	StopAndResetTimer();
 }
 
-void IncrementAHandler(ClickRecognizerRef recognizer, Window *window) {
+void IncrementAndDisplayA()
+{
     _countA += 1;
     DisplayCountA();
+}
+
+void IncrementAHandler(ClickRecognizerRef recognizer, Window *window) {
+	//set the first timer
+	_longPressUpTimerHandle = app_timer_send_event(app, 900 /* milliseconds */, CookieLongPressUpTimer);
+	
+	IncrementAndDisplayA();
 }
 
 void DecrementAHandler(ClickRecognizerRef recognizer, Window *window) {
@@ -95,9 +108,18 @@ void DecrementAHandler(ClickRecognizerRef recognizer, Window *window) {
         _countA -= 1;
     DisplayCountA();
 }
-void IncrementBHandler(ClickRecognizerRef recognizer, Window *window) {
+
+void IncrementAndDisplayB()
+{
     _countB += 1;
     DisplayCountB();
+}
+
+void IncrementBHandler(ClickRecognizerRef recognizer, Window *window) {
+	//set the first timer
+	_longPressDownTimerHandle = app_timer_send_event(app, 900 /* milliseconds */, CookieLongPressDownTimer);
+		
+	IncrementAndDisplayB();
 }
 
 void DecrementBHandler(ClickRecognizerRef recognizer, Window *window) {
@@ -106,10 +128,43 @@ void DecrementBHandler(ClickRecognizerRef recognizer, Window *window) {
     DisplayCountB();
 }
 
-void LongReleaseHandler(ClickRecognizerRef recognizer, Window *window) 
+void LongReleaseUpHandler(ClickRecognizerRef recognizer, Window *window) 
 {
-	//Sharing this handler for all buttons
-	//Without this, the first click after a long press gets lost
+	//Cancel the current timer
+	app_timer_cancel_event(app, _longPressUpTimerHandle);
+	//Without this (even if it's just empty), the first click after a long press gets lost
+}
+
+void LongReleaseDownHandler(ClickRecognizerRef recognizer, Window *window) 
+{
+	//Cancel the current timer
+	app_timer_cancel_event(app, _longPressDownTimerHandle);
+	//Without this (even if it's just empty), the first click after a long press gets lost
+}
+
+void LongReleaseSelectHandler(ClickRecognizerRef recognizer, Window *window) 
+{
+	//Without this (even if it's just empty), the first click after a long press gets lost
+}
+
+void TimerHandler(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) 
+{
+	(void)ctx;
+	(void)handle;
+	
+	if (cookie == CookieLongPressUpTimer)
+	{
+		//increment A & schedule next timer
+		IncrementAndDisplayA();
+		_longPressUpTimerHandle = app_timer_send_event(ctx, 700 /* milliseconds */, CookieLongPressUpTimer);
+	}
+	else if (cookie == CookieLongPressDownTimer)
+	{
+		//increment B & schedule next timer
+		IncrementAndDisplayB();
+		_longPressDownTimerHandle = app_timer_send_event(ctx, 700 /* milliseconds */, CookieLongPressDownTimer);
+	}
+	
 }
 
 void TickHandler(AppContextRef ctx, PebbleTickEvent *t) {
@@ -153,17 +208,17 @@ void ConfigProvider(ClickConfig **config, Window *window) {
     config[BUTTON_ID_UP]->click.handler = (ClickHandler)DecrementAHandler;
     config[BUTTON_ID_UP]->long_click.handler = (ClickHandler)IncrementAHandler;
     config[BUTTON_ID_UP]->long_click.delay_ms = 700;
-	config[BUTTON_ID_UP]->long_click.release_handler = (ClickHandler)LongReleaseHandler;
+	config[BUTTON_ID_UP]->long_click.release_handler = (ClickHandler)LongReleaseUpHandler;
 	
     config[BUTTON_ID_DOWN]->click.handler = (ClickHandler)DecrementBHandler;
     config[BUTTON_ID_DOWN]->long_click.handler = (ClickHandler)IncrementBHandler;
     config[BUTTON_ID_DOWN]->long_click.delay_ms = 700;
-	config[BUTTON_ID_DOWN]->long_click.release_handler = (ClickHandler)LongReleaseHandler;
+	config[BUTTON_ID_DOWN]->long_click.release_handler = (ClickHandler)LongReleaseDownHandler;
 	
     config[BUTTON_ID_SELECT]->click.handler = (ClickHandler)ToggleTimerHandler;
     config[BUTTON_ID_SELECT]->long_click.handler = (ClickHandler)ResetHandler;
     config[BUTTON_ID_SELECT]->long_click.delay_ms = 1000;
-	config[BUTTON_ID_SELECT]->long_click.release_handler = (ClickHandler)LongReleaseHandler;
+	config[BUTTON_ID_SELECT]->long_click.release_handler = (ClickHandler)LongReleaseSelectHandler;
 	
     (void)window;
 }
@@ -239,7 +294,8 @@ void pbl_main(void *params) {
 		.tick_info = {
 			.tick_handler = &TickHandler,
 			.tick_units = SECOND_UNIT
-		}
+		},
+		.timer_handler = &TimerHandler
 	};
 		
 	app_event_loop(params, &handlers);
