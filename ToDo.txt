@@ -1,3 +1,6 @@
+Buzz on certain timer values
+  45 minutes: 1 long vibration (or 2 short vibrations)
+  46, 47, 48, 49 minutes: 1 short vibration
+  50 minutes: 3 short vibrations
+  
 
-  
-  
