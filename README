@@ -5,5 +5,5 @@ Up - removes 1 life from the top player's counter
 Up long press - adds 1 life to the top player's counter and continues adding until the button is released
 Down - removes 1 life from the bottom player's counter
 Down long press - adds 1 life to the bottom player's counter and continues adding until the button is released
-Select - start/pause the timer
-Select long press - resets both life counters to 20 and resets (and stops) the timer
+Select - start/reset (and stop) the timer
+Select long press - resets both life counters to 20
