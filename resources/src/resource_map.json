@@ -1,14 +1,14 @@
 {
     "media": [
         {
-            "defName": "IMAGE_BG",
-            "type": "png",
-            "file": "images/background.png"
-        },
-        {
             "defName": "IMAGE_MENU_ICON",
             "type": "png",
             "file": "images/icon.png"
+        },
+        {
+            "defName": "IMAGE_BG",
+            "type": "png",
+            "file": "images/background.png"
         }
     ],
     "friendlyVersion": "VERSION",
