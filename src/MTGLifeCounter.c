@@ -6,7 +6,7 @@
 #define MY_UUID { 0xC2, 0x5A, 0x8D, 0x50, 0x10, 0x5F, 0x45, 0xBF, 0xC9, 0x92, 0xCE, 0xF9, 0x58, 0xAC, 0x93, 0xAD }
 PBL_APP_INFO(MY_UUID,
              "M:TG Life", "Rick Schrader",
-             1, 5, /* App version */
+             1, 6, /* App version */
              RESOURCE_ID_IMAGE_MENU_ICON,
              APP_INFO_STANDARD_APP);
 
@@ -25,9 +25,12 @@ AppTimerHandle _longPressDownTimerHandle;
 #define CookieLongPressUpTimer 1
 #define CookieLongPressDownTimer 2
 #define LongPressRepeatMilliseconds 500
-
+#define LongClickDelayMilliseconds 700
 #define InitialCount 20
 #define MaxHours 9
+#define VibesEnabled true
+#define FirstVibeMinute 45
+#define LastVibeMinute 50
 	
 static int _countA = InitialCount;
 static int _countB = InitialCount;
@@ -186,6 +189,25 @@ void TickHandler(AppContextRef ctx, PebbleTickEvent *t) {
 			else
 			{
 				_timerMinutes += 1;
+				
+				//Only cause vibes during the first hour
+				if(VibesEnabled && _timerHours == 0)
+				{
+					if(_timerMinutes == FirstVibeMinute)
+						vibes_long_pulse();
+					else if(_timerMinutes > FirstVibeMinute && _timerMinutes < LastVibeMinute)
+						vibes_short_pulse();
+					else if(_timerMinutes == LastVibeMinute)
+					{
+						// Vibe pattern: three 200ms vibes with a 100ms pause between them
+						static const uint32_t const segments[] = { 200, 100, 200, 100, 200 };
+						VibePattern pat = {
+						  .durations = segments,
+						  .num_segments = ARRAY_LENGTH(segments),
+						};
+						vibes_enqueue_custom_pattern(pat);
+					}
+				}
 			}
 		}
 		else	
@@ -212,17 +234,17 @@ void ToggleTimerHandler(ClickRecognizerRef recognizer, Window *window) {
 void ConfigProvider(ClickConfig **config, Window *window) {
     config[BUTTON_ID_UP]->click.handler = (ClickHandler)DecrementAHandler;
     config[BUTTON_ID_UP]->long_click.handler = (ClickHandler)IncrementAHandler;
-    config[BUTTON_ID_UP]->long_click.delay_ms = 700;
+    config[BUTTON_ID_UP]->long_click.delay_ms = LongClickDelayMilliseconds;
 	config[BUTTON_ID_UP]->long_click.release_handler = (ClickHandler)LongReleaseUpHandler;
 	
     config[BUTTON_ID_DOWN]->click.handler = (ClickHandler)DecrementBHandler;
     config[BUTTON_ID_DOWN]->long_click.handler = (ClickHandler)IncrementBHandler;
-    config[BUTTON_ID_DOWN]->long_click.delay_ms = 700;
+    config[BUTTON_ID_DOWN]->long_click.delay_ms = LongClickDelayMilliseconds;
 	config[BUTTON_ID_DOWN]->long_click.release_handler = (ClickHandler)LongReleaseDownHandler;
 	
     config[BUTTON_ID_SELECT]->click.handler = (ClickHandler)ToggleTimerHandler;
     config[BUTTON_ID_SELECT]->long_click.handler = (ClickHandler)ResetHandler;
-    config[BUTTON_ID_SELECT]->long_click.delay_ms = 1000;
+    config[BUTTON_ID_SELECT]->long_click.delay_ms = LongClickDelayMilliseconds;
 	config[BUTTON_ID_SELECT]->long_click.release_handler = (ClickHandler)LongReleaseSelectHandler;
 	
     (void)window;
