@@ -1,0 +1,30 @@
+{
+    "versionLabel": "2.0",
+    "uuid": "51d3024b-0987-40cf-9883-fc4400e4cce0",
+    "appKeys": {},
+    "longName": "Magic: The Gathering Life",
+    "versionCode": 1,
+    "capabilities": [
+        ""
+    ],
+    "shortName": "M:TG Life",
+    "companyName": "Rick Schrader",
+    "watchapp": {
+        "watchface": false
+    },
+    "resources": {
+        "media": [
+            {
+                "menuIcon": true,
+                "type": "png",
+                "name": "IMAGE_MENU_ICON",
+                "file": "images/icon.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_BG",
+                "file": "images/background.png"
+            }
+        ]
+    }
+}

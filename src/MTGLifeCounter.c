@@ -1,29 +1,18 @@
-#include "pebble_os.h"
-#include "pebble_app.h"
-#include "pebble_fonts.h"
+#include <pebble.h>
 #include "xprintf.h"
 	
-#define MY_UUID { 0xC2, 0x5A, 0x8D, 0x50, 0x10, 0x5F, 0x45, 0xBF, 0xC9, 0x92, 0xCE, 0xF9, 0x58, 0xAC, 0x93, 0xAD }
-PBL_APP_INFO(MY_UUID,
-             "M:TG Life", "Rick Schrader",
-             1, 6, /* App version */
-             RESOURCE_ID_IMAGE_MENU_ICON,
-             APP_INFO_STANDARD_APP);
+static Window *_window;
 
-static Window window;
-AppContextRef app;
+static TextLayer *_countALayer;
+static TextLayer *_countBLayer;
+static TextLayer *_timerLayer;
+static GBitmap *_image;
+static BitmapLayer *_background;
 
-static TextLayer _countALayer;
-static TextLayer _countBLayer;
-static TextLayer _timerLayer;
-static BmpContainer _background;
+//Allows cancelling the timer using app_timer_cancel
+AppTimer *_longPressUpTimerHandle;
+AppTimer *_longPressDownTimerHandle;
 
-//Allows cancelling the timer using app_timer_cancel_event
-AppTimerHandle _longPressUpTimerHandle;
-AppTimerHandle _longPressDownTimerHandle;
-//Lets us differentiate between multiple timers
-#define CookieLongPressUpTimer 1
-#define CookieLongPressDownTimer 2
 #define LongPressRepeatMilliseconds 500
 #define LongClickDelayMilliseconds 700
 #define InitialCount 20
@@ -39,16 +28,17 @@ static int _timerHours = 0;
 static int _timerMinutes = 0;
 static int _timerSeconds = 0;
 
+
 void DisplayCountA() {
 	static char countA[] = "20";
 	xsprintf(countA, "%d", _countA);
-	text_layer_set_text(&_countALayer, countA);
+	text_layer_set_text(_countALayer, countA);
 }
 
 void DisplayCountB() {
 	static char countB[] = "20";
 	xsprintf(countB, "%d", _countB);
-	text_layer_set_text(&_countBLayer, countB);
+	text_layer_set_text(_countBLayer, countB);
 }
 
 void DisplayTimer()
@@ -74,7 +64,7 @@ void DisplayTimer()
 	
 	xsprintf(timerText, "%s%s%s%s%s", hoursText, ":", minutesText, ":", secondsText);
   	
-	text_layer_set_text(&_timerLayer, timerText);
+	text_layer_set_text(_timerLayer, timerText);
 }
 
 void StopAndResetTimer()
@@ -86,12 +76,11 @@ void StopAndResetTimer()
 	DisplayTimer();
 }
 
-void ResetHandler(ClickRecognizerRef recognizer, Window *window) {
+void ResetHandler() {
     _countA = InitialCount;
     _countB = InitialCount;
 	DisplayCountA();
 	DisplayCountB();
-	
 }
 
 void IncrementAndDisplayA()
@@ -100,14 +89,21 @@ void IncrementAndDisplayA()
     DisplayCountA();
 }
 
-void IncrementAHandler(ClickRecognizerRef recognizer, Window *window) {
+void LongPressUpTimerHandler(void *data) 
+{
+	//increment A & schedule next timer
+	IncrementAndDisplayA();
+	_longPressUpTimerHandle = app_timer_register(LongPressRepeatMilliseconds, LongPressUpTimerHandler, NULL);
+}
+
+void IncrementAHandler() {
 	//set the first timer
-	_longPressUpTimerHandle = app_timer_send_event(app, LongPressRepeatMilliseconds, CookieLongPressUpTimer);
+	_longPressUpTimerHandle = app_timer_register(LongPressRepeatMilliseconds, LongPressUpTimerHandler, NULL);
 	
 	IncrementAndDisplayA();
 }
 
-void DecrementAHandler(ClickRecognizerRef recognizer, Window *window) {
+void DecrementAHandler() {
     if(_countA > 0)
         _countA -= 1;
     DisplayCountA();
@@ -119,62 +115,41 @@ void IncrementAndDisplayB()
     DisplayCountB();
 }
 
-void IncrementBHandler(ClickRecognizerRef recognizer, Window *window) {
+void LongPressDownTimerHandler(void *data) 
+{
+	//increment B & schedule next timer
+	IncrementAndDisplayB();
+	_longPressDownTimerHandle = app_timer_register(LongPressRepeatMilliseconds, LongPressDownTimerHandler, NULL);
+}
+
+void IncrementBHandler() {
 	//set the first timer
-	_longPressDownTimerHandle = app_timer_send_event(app, LongPressRepeatMilliseconds, CookieLongPressDownTimer);
+	_longPressDownTimerHandle = app_timer_register(LongPressRepeatMilliseconds, LongPressDownTimerHandler, NULL);
 		
 	IncrementAndDisplayB();
 }
 
-void DecrementBHandler(ClickRecognizerRef recognizer, Window *window) {
+void DecrementBHandler() {
     if(_countB > 0)
         _countB -= 1;
     DisplayCountB();
 }
 
-void LongReleaseUpHandler(ClickRecognizerRef recognizer, Window *window) 
+void LongReleaseUpHandler() 
 {
 	//Cancel the current timer
-	app_timer_cancel_event(app, _longPressUpTimerHandle);
-	//Without this (even if it's just empty), the first click after a long press gets lost
+	app_timer_cancel(_longPressUpTimerHandle);
 }
 
-void LongReleaseDownHandler(ClickRecognizerRef recognizer, Window *window) 
+void LongReleaseDownHandler() 
 {
 	//Cancel the current timer
-	app_timer_cancel_event(app, _longPressDownTimerHandle);
-	//Without this (even if it's just empty), the first click after a long press gets lost
+	app_timer_cancel(_longPressDownTimerHandle);
 }
 
-void LongReleaseSelectHandler(ClickRecognizerRef recognizer, Window *window) 
-{
-	//Without this (even if it's just empty), the first click after a long press gets lost
-}
 
-void TimerHandler(AppContextRef ctx, AppTimerHandle handle, uint32_t cookie) 
-{
-	(void)ctx;
-	(void)handle;
-	
-	if (cookie == CookieLongPressUpTimer)
-	{
-		//increment A & schedule next timer
-		IncrementAndDisplayA();
-		_longPressUpTimerHandle = app_timer_send_event(ctx, LongPressRepeatMilliseconds, CookieLongPressUpTimer);
-	}
-	else if (cookie == CookieLongPressDownTimer)
-	{
-		//increment B & schedule next timer
-		IncrementAndDisplayB();
-		_longPressDownTimerHandle = app_timer_send_event(ctx, LongPressRepeatMilliseconds, CookieLongPressDownTimer);
-	}
-	
-}
+void SecondsTickHandler(struct tm *tick_time, TimeUnits units_changed) {
 
-void TickHandler(AppContextRef ctx, PebbleTickEvent *t) {
-
-	(void)ctx;
-	
 	if(_timerEnabled)
 	{
 		if(_timerSeconds+1 >= 60)
@@ -223,7 +198,7 @@ void TickHandler(AppContextRef ctx, PebbleTickEvent *t) {
 	}
 }
 
-void ToggleTimerHandler(ClickRecognizerRef recognizer, Window *window) {
+void ToggleTimerHandler() {
    
 	if(_timerEnabled)
 		StopAndResetTimer();
@@ -231,6 +206,7 @@ void ToggleTimerHandler(ClickRecognizerRef recognizer, Window *window) {
 		_timerEnabled = true;
 }
 
+/*
 void ConfigProvider(ClickConfig **config, Window *window) {
     config[BUTTON_ID_UP]->click.handler = (ClickHandler)DecrementAHandler;
     config[BUTTON_ID_UP]->long_click.handler = (ClickHandler)IncrementAHandler;
@@ -241,89 +217,114 @@ void ConfigProvider(ClickConfig **config, Window *window) {
     config[BUTTON_ID_DOWN]->long_click.handler = (ClickHandler)IncrementBHandler;
     config[BUTTON_ID_DOWN]->long_click.delay_ms = LongClickDelayMilliseconds;
 	config[BUTTON_ID_DOWN]->long_click.release_handler = (ClickHandler)LongReleaseDownHandler;
+}
+*/
+
+void clickConfigProvider(void *context) {
+    window_set_click_context(BUTTON_ID_UP, context);
 	
-    config[BUTTON_ID_SELECT]->click.handler = (ClickHandler)ToggleTimerHandler;
-    config[BUTTON_ID_SELECT]->long_click.handler = (ClickHandler)ResetHandler;
-    config[BUTTON_ID_SELECT]->long_click.delay_ms = LongClickDelayMilliseconds;
-	config[BUTTON_ID_SELECT]->long_click.release_handler = (ClickHandler)LongReleaseSelectHandler;
-	
-    (void)window;
+	//Up button single click
+	window_single_click_subscribe(BUTTON_ID_UP, DecrementAHandler);
+	//Up button long press
+	window_long_click_subscribe(BUTTON_ID_UP, LongClickDelayMilliseconds, IncrementAHandler, LongReleaseUpHandler);
+
+	//Down button single click
+	window_single_click_subscribe(BUTTON_ID_DOWN, DecrementBHandler);
+	//Down button long press
+	window_long_click_subscribe(BUTTON_ID_DOWN, LongClickDelayMilliseconds, IncrementBHandler, LongReleaseDownHandler);
+
+	//Select button single click
+	window_single_click_subscribe(BUTTON_ID_SELECT, ToggleTimerHandler);
+	//Select button long click
+    window_long_click_subscribe(BUTTON_ID_SELECT, LongClickDelayMilliseconds, ResetHandler, NULL /* Button release handler */);
+
 }
 
-void InitHandler(AppContextRef ctx) {
-    app = ctx;
-
-    window_init(&window, "MTG Life Counter");
-    window_stack_push(&window, true /* Animated */);
-    window_set_background_color(&window, GColorBlack);
-    window_set_fullscreen(&window, false);
-
-    resource_init_current_app(&APP_RESOURCES);
-
-    // Arrange for user input.
-    window_set_click_config_provider(&window, (ClickConfigProvider) ConfigProvider);
-
-    //// Get our fonts
-    //_bigFont = fonts_load_custom_font(resource_get_handle(CounterFont));
-
-    // Root layer
-    Layer *rootLayer = window_get_root_layer(&window);
+void init() {
     
-	// Add background image
-    bmp_init_container(RESOURCE_ID_IMAGE_BG, &_background);
-    //layer_set_frame(&_background.layer.layer, GRect(0, 0, 144, 140));
-    layer_set_frame(&_background.layer.layer, GRect(0, 0, 144, 152));
-    layer_add_child(rootLayer, &_background.layer.layer);
-    
-	text_layer_init(&_countALayer, window.layer.frame);
-    text_layer_set_background_color(&_countALayer, GColorClear);
-	text_layer_set_font(&_countALayer, fonts_get_system_font(FONT_KEY_GOTHAM_42_BOLD));
-    //text_layer_set_font(&_countALayer, _bigFont);
-    //Not sure why, but centering would not work with an x origin of 0
-    layer_set_frame(&_countALayer.layer, GRect(-5, 10, 154, 60));
-  	text_layer_set_text_color(&_countALayer, GColorBlack);
-    text_layer_set_text_alignment(&_countALayer, GTextAlignmentCenter);
-    layer_add_child(rootLayer, &_countALayer.layer);
+	_window = window_create();
+	window_stack_push(_window, true /* Animated */);
+    window_set_background_color(_window, GColorBlack);
+	Layer *windowLayer = window_get_root_layer(_window);
+	GRect bounds = layer_get_frame(windowLayer);
 	
-    text_layer_init(&_countBLayer, window.layer.frame);
-    text_layer_set_background_color(&_countBLayer, GColorClear);
-    //text_layer_set_font(&_countBLayer, _bigFont);
-    text_layer_set_font(&_countBLayer, fonts_get_system_font(FONT_KEY_GOTHAM_42_BOLD));
-	//Not sure why, but centering would not work with an x origin of 0
-    layer_set_frame(&_countBLayer.layer, GRect(-5, 90, 154, 60));
-  	text_layer_set_text_color(&_countBLayer, GColorBlack);
-    text_layer_set_text_alignment(&_countBLayer, GTextAlignmentCenter);
-    layer_add_child(rootLayer, &_countBLayer.layer);
+	//XXwindow_init(&window, "MTG Life Counter");
+    //XXwindow_set_fullscreen(&window, false);
+	
+	// Add background image
+  	_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BG);
+  	_background = bitmap_layer_create(bounds);
+  	bitmap_layer_set_bitmap(_background, _image);
+  	bitmap_layer_set_alignment(_background, GAlignCenter);
+  	layer_add_child(windowLayer, bitmap_layer_get_layer(_background));
 
-	text_layer_init(&_timerLayer, window.layer.frame);
-    text_layer_set_background_color(&_timerLayer, GColorClear);
-    text_layer_set_font(&_timerLayer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+	//Setup top count label
 	//Not sure why, but centering would not work with an x origin of 0
-    layer_set_frame(&_timerLayer.layer, GRect(-5, 59, 154, 26));
-  	text_layer_set_text_color(&_timerLayer, GColorWhite);
-    text_layer_set_text_alignment(&_timerLayer, GTextAlignmentCenter);
-    layer_add_child(rootLayer, &_timerLayer.layer);
+	_countALayer = text_layer_create((GRect){ .origin = { -5, 10 }, .size = { 154 , 60 } });
+	text_layer_set_background_color(_countALayer, GColorClear);
+	text_layer_set_font(_countALayer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
+	text_layer_set_text_color(_countALayer, GColorBlack);
+    text_layer_set_text_alignment(_countALayer, GTextAlignmentCenter);
+	layer_add_child(windowLayer, text_layer_get_layer(_countALayer));
+	
+	//Setup bottom count label
+	//Not sure why, but centering would not work with an x origin of 0
+	_countBLayer = text_layer_create((GRect){ .origin = { -5, 90 }, .size = { 154 , 60 } });
+  	text_layer_set_background_color(_countBLayer, GColorClear);
+	text_layer_set_font(_countBLayer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
+	text_layer_set_text_color(_countBLayer, GColorBlack);
+    text_layer_set_text_alignment(_countBLayer, GTextAlignmentCenter);
+	layer_add_child(windowLayer, text_layer_get_layer(_countBLayer));
+		
+	//Setup bottom count label
+	//Not sure why, but centering would not work with an x origin of 0
+	_timerLayer = text_layer_create((GRect){ .origin = { -5, 59 }, .size = { 154 , 26 } });
+  	text_layer_set_background_color(_timerLayer, GColorClear);
+	text_layer_set_font(_timerLayer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+	text_layer_set_text_color(_timerLayer, GColorWhite);
+    text_layer_set_text_alignment(_timerLayer, GTextAlignmentCenter);
+	layer_add_child(windowLayer, text_layer_get_layer(_timerLayer));
 
+	
     DisplayCountA();
 	DisplayCountB();
 	DisplayTimer();
+	
+	//Subscribe to tick events
+	tick_timer_service_subscribe(SECOND_UNIT, SecondsTickHandler);
+	
+	// Arrange for user input
+    window_set_click_config_provider(_window, (ClickConfigProvider) clickConfigProvider);
+    
 }
 
-void DeinitHandler(AppContextRef ctx) {
-    bmp_deinit_container(&_background);
-	//fonts_unload_custom_font(_bigFont);
+void deinit() {
+	tick_timer_service_unsubscribe();
+	
+	text_layer_destroy(_countALayer);
+	text_layer_destroy(_countBLayer);
+	text_layer_destroy(_timerLayer);
+	
+ 	gbitmap_destroy(_image);
+  	bitmap_layer_destroy(_background);
+
+	window_destroy(_window);
 }
 
-void pbl_main(void *params) {
-	PebbleAppHandlers handlers = {
-		.init_handler = &InitHandler,
-		.deinit_handler = &DeinitHandler,
+int main(void) {
+	
+	init();
+	
+	/*PebbleAppHandlers handlers = {
 		.tick_info = {
 			.tick_handler = &TickHandler,
 			.tick_units = SECOND_UNIT
 		},
 		.timer_handler = &TimerHandler
 	};
-		
-	app_event_loop(params, &handlers);
+	*/
+	
+	app_event_loop();
+	
+	deinit();
 }
